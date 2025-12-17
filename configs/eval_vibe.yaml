@@ -1,0 +1,35 @@
+manifest_path: data/benchmarks/manifest.json
+output_csv: ../results/vibe_eval.csv
+
+# optionally evaluate only specific videos by manifest id
+only_ids: null   # e.g. ["Test_Deer_Day"]
+
+rng_seed: 0
+
+eval:
+  start_sec: 0.0
+  end_sec: null
+  warmup_sec: 2.0
+
+preprocess:
+  grayscale: true
+  resize_width: 640
+
+vibe:
+  num_samples: 20
+  min_matches: 2
+  radius: 20
+  subsampling_factor: 16
+
+postprocess:
+  median_blur_ksize: 3
+  erode_iters: 1
+  dilate_iters: 2
+
+  # choose ONE of these:
+  min_fg_pixels: 500
+  min_fg_ratio: null
+
+ui:
+  use_tqdm: true      # progress bar
+  show_debug: false   # OpenCV debug window
