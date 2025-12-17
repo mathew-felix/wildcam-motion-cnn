@@ -1,0 +1,91 @@
+# =============================================================================
+# ViBe + MHI evaluation config
+# =============================================================================
+# This evaluates a *clip-like* gate:
+#   - ViBe produces a foreground mask each frame
+#   - MHI accumulates recent motion (tau window)
+#   - A hysteresis ClipGate uses:
+#       START (strict) from ViBe instantaneous score
+#       STAY  (lenient) from MHI score + post-roll
+#
+# Output CSV includes TP/FP/FN/TN + precision/recall + FPS + saved%,
+# and also logs MHI + gate settings for reproducibility.
+# =============================================================================
+
+manifest_path: data/benchmarks/manifest.json
+output_csv: ../results/vibe_mhicsv
+
+only_ids: null        # e.g. ["Test_Deer_Day"]
+rng_seed: 0
+
+eval:
+  start_sec: 0.0
+  end_sec: null
+  warmup_sec: 2.0
+
+preprocess:
+  grayscale: true
+  resize_width: 640
+
+# ----------------------------
+# ViBe parameters
+# ----------------------------
+vibe:
+  num_samples: 20
+  radius: 20
+  subsampling_factor: 16
+  min_matches: 2
+
+  # You can still enable AT/ALR here if you want:
+  adaptive_min_matches: false
+  adaptive_update: false
+
+# ----------------------------
+# Postprocess mask cleanup
+# ----------------------------
+postprocess:
+  median_blur_ksize: 3
+  erode_iters: 1
+  dilate_iters: 2
+
+# ----------------------------
+# Component filtering (BEFORE MHI update)
+# Highly recommended to prevent wind/grass speckles accumulating in MHI.
+# ----------------------------
+components:
+  min_blob_area: 120     # 0 disables
+  max_blobs: 3           # 0 disables (keep all)
+
+# ----------------------------
+# MHI parameters
+# ----------------------------
+mhi:
+  enabled: true
+  tau_sec: 1.0           # 0.7–1.5 is a good starting range for wildlife clips
+  recent_thresh: 0.3
+
+# ----------------------------
+# ClipGate (hysteresis)
+# START: strict instantaneous signal from ViBe
+# STAY : lenient temporal signal from MHI
+# ----------------------------
+gate:
+  enabled: true
+
+  # Start recording if ViBe foreground pixels exceed threshold for K consecutive frames.
+  # If you change resize_width, you should retune start_threshold (pixel-based).
+  start_metric: vibe_fg_pixels
+  start_threshold: 900.0
+  start_consecutive: 2
+
+  # Continue recording while MHI indicates recent motion remains.
+  stay_metric: mhi_active_ratio
+  stay_threshold: 0.002
+
+  # Clip shaping
+  pre_roll_sec: 0.0
+  post_roll_sec: 1.0
+
+ui:
+  use_tqdm: true
+  show_debug: false
