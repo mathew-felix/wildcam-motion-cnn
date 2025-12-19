@@ -119,9 +119,26 @@ Metrics are aggregated across four benchmark videos: `deer_day`, `deer_night`, `
 - **Storage-first baseline:** `ViBe (baseline)` (highest storage saved, but lowest behavior coverage)
 - **Precision-oriented option:** `ViBe + MotionNet (CNN latch)` (higher precision and storage saved, but can start later)
 
-### One “story” figure to include in README
-Use the **Storage Saved vs Animal Coverage** plot (trade-off curve).  
-It directly shows the research goal: **save storage without losing behavior**.
+## Tuning (practical knobs)
+
+These methods optimize **behavior preservation** (Animal_Coverage), but there is a cost: **Tail**.
+
+- **Tail = “how long we keep recording after the animal is gone.”**  
+  Higher tail happens because MHI / stay logic intentionally **bridges short motion gaps** (good for subtle behavior), but in dynamic backgrounds (wind/grass/IR flicker) it can keep the gate open longer than necessary.
+
+- **If you want less tail (more storage/battery savings):**
+  - Decrease `mhi.tau_sec` (shorter motion memory / faster decay)
+  - Increase the “stay” threshold (require stronger evidence to keep recording)
+  - Optionally increase the “close” requirement (e.g., require *K consecutive quiet frames* to close)
+
+- **If you want higher coverage/recall (keep more behavior):**
+  - Increase `mhi.tau_sec` (longer memory bridges subtle motion)
+  - Lower the “stay” threshold (keep recording through small gaps)
+  - Run MotionNet (CNN latch) more frequently during weak-motion periods
+
+- **Trade-off (important):**  
+  Tail ↓ usually means Coverage/Recall ↓. Coverage ↑ usually means Tail ↑.  
+  Your goal is to pick a point on the **StorageSaved vs Coverage** trade-off curve that matches the field deployment needs.
 
 ---
 
