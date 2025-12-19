@@ -1,0 +1,76 @@
+# vibe_ALR.yaml
+# ViBe + ALR
+# AT=off, ALR=on, MHI=off, CNN=off
+#
+# Research purpose
+# - Adaptive Learning Rate (ALR): adapts background update/subsampling to reduce flicker-driven false triggers while tracking gradual background change.
+#
+# Inputs
+# - manifest_path: dataset manifest (video path + GT events JSON + fps)
+# - only_ids: optional subset of videos to evaluate (null = all)
+#
+# Outputs (written by scripts/eval_vibe_mhi_cnn.py)
+# - benchmark_summary_csv: per-video metrics (frame-level + event-level)
+# - detection_log_csv: per-frame log for analysis/debug/plots
+#
+# Run
+#   python scripts/eval_vibe_mhi_cnn.py --config <this_file>
+manifest_path: data/benchmarks/manifest.json
+only_ids: null
+rng_seed: 0
+eval:
+  start_sec: 0.0
+  end_sec: null
+  warmup_sec: 2.0
+preprocess:
+  resize_width: 640
+vibe:
+  num_samples: 20
+  radius: 20
+  subsampling_factor: 16
+  min_matches: 2
+  adaptive_min_matches: false
+  intensity_min: 40.0
+  intensity_max: 160.0
+  min_matches_min: 1
+  min_matches_max: 4
+  intensity_ema_alpha: 0.2
+  adaptive_update: true
+  motion_low: 0.001
+  motion_high: 0.05
+  update_sf_min: 8
+  update_sf_max: 64
+  motion_ema_alpha: 0.2
+postprocess:
+  median_blur_ksize: 3
+  erode_iters: 1
+  dilate_iters: 2
+components:
+  min_blob_area: 200
+  max_blobs: 3
+mhi:
+  enabled: false
+  tau_sec: 1.2
+  recent_thresh: 0.25
+gate:
+  enabled: true
+  start_metric: vibe_fg_pixels
+  start_threshold: 550.0
+  start_consecutive: 1
+  cnn_start_enabled: false
+  cnn_start_threshold: 0.8
+  cnn_start_consecutive: 2
+  cnn_start_requires_motion: true
+  cnn_start_motion_metric: vibe_fg_ratio
+  cnn_start_motion_threshold: 0.00025
+  stay_metric: vibe_fg_pixels
+  stay_threshold: 550.0
+  pre_roll_sec: 0.0
+  post_roll_sec: 1.5
+cnn:
+  enabled: false
+ui:
+  use_tqdm: true
+  show_debug: false
+benchmark_summary_csv: ../../results/benchmark_summary__vibe_ALR.csv
+detection_log_csv: ../../results/detection_log__vibe_ALR.csv

@@ -1,0 +1,10 @@
+# docker/requirements.lock.txt
+# Minimal pinned-ish deps used by the motion pipeline + evaluation.
+# If your repo already has requirements.txt, Dockerfile will prefer that.
+numpy
+pandas
+pyyaml
+opencv-python
+tqdm
+scikit-learn
+Pillow

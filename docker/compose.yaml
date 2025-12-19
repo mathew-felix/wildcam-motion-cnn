@@ -1,0 +1,20 @@
+# docker/compose.yaml
+# Optional convenience file. Requires Docker Compose v2+.
+services:
+  motion:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: wildlife-motion:latest
+    volumes:
+      - ..:/workspace
+    working_dir: /workspace
+    shm_size: "1g"
+    mem_limit: "4g"
+    cpus: 4.0
+    gpus: all
+    environment:
+      - OMP_NUM_THREADS=2
+      - MKL_NUM_THREADS=2
+      - OPENBLAS_NUM_THREADS=2
+    command: bash

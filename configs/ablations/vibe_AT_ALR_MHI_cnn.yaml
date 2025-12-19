@@ -1,0 +1,116 @@
+# vibe_AT_ALR_MHI_cnn.yaml
+# ViBe + AT + ALR + MHI + CNN
+# AT=on, ALR=on, MHI=on, CNN=on
+#
+# Research purpose
+# - Full system. Typically highest event recall; trade-off is extra non-event frames (gap-bridging) and compute. If adaptive blocks exist, CNN is scheduled only when ambiguous.
+#
+# Inputs
+# - manifest_path: dataset manifest (video path + GT events JSON + fps)
+# - only_ids: optional subset of videos to evaluate (null = all)
+#
+# Outputs (written by scripts/eval_vibe_mhi_cnn.py)
+# - benchmark_summary_csv: per-video metrics (frame-level + event-level)
+# - detection_log_csv: per-frame log for analysis/debug/plots
+#
+# Run
+#   python scripts/eval_vibe_mhi_cnn.py --config <this_file>
+manifest_path: data/benchmarks/manifest.json
+only_ids: null
+rng_seed: 0
+eval:
+  start_sec: 0.0
+  end_sec: null
+  warmup_sec: 2.0
+preprocess:
+  resize_width: 640
+vibe:
+  num_samples: 20
+  radius: 20
+  subsampling_factor: 16
+  min_matches: 2
+  adaptive_min_matches: true
+  intensity_min: 40.0
+  intensity_max: 160.0
+  min_matches_min: 1
+  min_matches_max: 4
+  intensity_ema_alpha: 0.2
+  adaptive_update: true
+  motion_low: 0.001
+  motion_high: 0.05
+  update_sf_min: 8
+  update_sf_max: 64
+  motion_ema_alpha: 0.2
+postprocess:
+  median_blur_ksize: 3
+  erode_iters: 1
+  dilate_iters: 2
+components:
+  min_blob_area: 200
+  max_blobs: 3
+mhi:
+  enabled: true
+  tau_sec: 1.2
+  recent_thresh: 0.25
+gate:
+  enabled: true
+  start_metric: vibe_fg_pixels
+  start_threshold: 550.0
+  start_consecutive: 1
+  cnn_start_enabled: true
+  cnn_start_threshold: 0.8
+  cnn_start_consecutive: 2
+  cnn_start_requires_motion: true
+  cnn_start_motion_metric: vibe_fg_ratio
+  cnn_start_motion_threshold: 0.00025
+  stay_metric: stay_score
+  stay_threshold: 0.001
+  pre_roll_sec: 0.0
+  post_roll_sec: 1.5
+cnn:
+  enabled: true
+  model_format: auto
+  model_path: models/mobilenetv3_small_distilled.pt
+  device: auto
+  input_size: 224
+  num_classes: 1
+  output: sigmoid
+  p_set: 0.45
+  p_start_high: 0.8
+  presence_tau_sec: 2.0
+  start_requires_motion: true
+  refresh_requires_motion: true
+  motion_min_fg_ratio: 0.00025
+  stride_recording: 8
+  stride_idle_motion: 15
+  idle_fullframe_stride_sec: 0.0
+  max_crops: 3
+  min_crop_area: 160
+  expand_ratio: 1.35
+  pad_px: 4
+  full_frame_if_no_crops: true
+adaptive:
+  enabled: true
+  cnn_motion_low_fg_ratio: 0.00025
+  cnn_motion_high_fg_ratio: 0.01
+  stride_idle_weak: 12
+  stride_rec_weak: 6
+  stride_rec_nomotion: 4
+  mhi_requires_arm: true
+  mhi_arm_fg_ratio: 0.002
+  mhi_arm_hold_sec: 1.0
+  mhi_extra_decay_night_sec: 1.0
+  fp_guard:
+    enabled: true
+    night_luma_threshold: 70.0
+    negative_p: 0.25
+    negative_streak_to_activate: 3
+    hold_sec: 2.0
+    min_matches_boost: 1
+    update_sf_div: 2.0
+    mhi_scale_when_active: 0.35
+ui:
+  use_tqdm: true
+  show_debug: false
+benchmark_summary_csv: ../../results/benchmark_summary__vibe_AT_ALR_MHI_cnn_adaptive.csv
+detection_log_csv: ../../results/detection_log__vibe_AT_ALR_MHI_cnn_adaptive.csv

@@ -1,0 +1,96 @@
+# vibe_cnn.yaml
+# ViBe + CNN
+# AT=off, ALR=off, MHI=off, CNN=on
+#
+# Research purpose
+# - Adds lightweight semantic confirmation (MobileNetV3) to reduce missed animal frames during low motion; compute increases; can reduce storage savings.
+#
+# Inputs
+# - manifest_path: dataset manifest (video path + GT events JSON + fps)
+# - only_ids: optional subset of videos to evaluate (null = all)
+#
+# Outputs (written by scripts/eval_vibe_mhi_cnn.py)
+# - benchmark_summary_csv: per-video metrics (frame-level + event-level)
+# - detection_log_csv: per-frame log for analysis/debug/plots
+#
+# Run
+#   python scripts/eval_vibe_mhi_cnn.py --config <this_file>
+manifest_path: data/benchmarks/manifest.json
+only_ids: null
+rng_seed: 0
+eval:
+  start_sec: 0.0
+  end_sec: null
+  warmup_sec: 2.0
+preprocess:
+  resize_width: 640
+vibe:
+  num_samples: 20
+  radius: 20
+  subsampling_factor: 16
+  min_matches: 2
+  adaptive_min_matches: false
+  intensity_min: 40.0
+  intensity_max: 160.0
+  min_matches_min: 1
+  min_matches_max: 4
+  intensity_ema_alpha: 0.2
+  adaptive_update: false
+  motion_low: 0.001
+  motion_high: 0.05
+  update_sf_min: 8
+  update_sf_max: 64
+  motion_ema_alpha: 0.2
+postprocess:
+  median_blur_ksize: 3
+  erode_iters: 1
+  dilate_iters: 2
+components:
+  min_blob_area: 200
+  max_blobs: 3
+mhi:
+  enabled: false
+  tau_sec: 1.2
+  recent_thresh: 0.25
+gate:
+  enabled: true
+  start_metric: vibe_fg_pixels
+  start_threshold: 550.0
+  start_consecutive: 1
+  cnn_start_enabled: true
+  cnn_start_threshold: 0.8
+  cnn_start_consecutive: 2
+  cnn_start_requires_motion: true
+  cnn_start_motion_metric: vibe_fg_ratio
+  cnn_start_motion_threshold: 0.00025
+  stay_metric: cnn_presence_score
+  stay_threshold: 0.001
+  pre_roll_sec: 0.0
+  post_roll_sec: 1.5
+cnn:
+  enabled: true
+  model_format: auto
+  model_path: models/mobilenetv3_small_distilled.pt
+  device: auto
+  input_size: 224
+  num_classes: 1
+  output: sigmoid
+  p_set: 0.45
+  p_start_high: 0.8
+  presence_tau_sec: 2.0
+  start_requires_motion: true
+  refresh_requires_motion: true
+  motion_min_fg_ratio: 0.00025
+  stride_recording: 8
+  stride_idle_motion: 15
+  idle_fullframe_stride_sec: 0.0
+  max_crops: 3
+  min_crop_area: 160
+  expand_ratio: 1.35
+  pad_px: 4
+  full_frame_if_no_crops: true
+ui:
+  use_tqdm: true
+  show_debug: false
+benchmark_summary_csv: ../../results/benchmark_summary__vibe_cnn.csv
+detection_log_csv: ../../results/detection_log__vibe_cnn.csv
